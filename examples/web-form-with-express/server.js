@@ -1,5 +1,8 @@
 require("dotenv").config()
 const express = require("express")
+
+const fetch = require("node-fetch")
+
 const app = express()
 
 const { Client } = require("@notionhq/client")
@@ -10,7 +13,34 @@ app.use(express.static("public"))
 app.use(express.json()) // for parsing application/json
 
 // http://expressjs.com/en/starter/basic-routing.html
-app.get("/", function (request, response) {
+
+app.use(express.static("public"))
+app.use(express.json()) // for parsing application/json
+
+app.get("/", async function (request, response) {
+  const url = `https://www.reddit.com/r/chatgpt/hot.json?limit=25`
+
+  console.log("🚀 ~ file: server.js:12 ~ //app.get ~ url:", url)
+
+  try {
+    const redditResponse = await fetch(url) // Renamed to avoid naming conflict with express response
+    const json = await redditResponse.json()
+    const topStories = json.data.children.map(post => ({
+      title: post.data.title,
+      link: `https://www.reddit.com${post.data.permalink}`,
+      upvotes: post.data.ups,
+    }))
+
+    ////////////
+
+    console.log("🚀 ~ file: server.js:22 ~ app.get ~ topStories:", topStories)
+
+    /////
+  } catch (error) {
+    console.error("Error fetching top stories:", error)
+    response.status(500).send("An error occurred while fetching top stories")
+  }
+
   response.sendFile(__dirname + "/views/index.html")
 })
 
